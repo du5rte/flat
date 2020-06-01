@@ -13,6 +13,8 @@ function flatten (target, opts) {
 
   const delimiter = opts.delimiter || '.'
   const maxDepth = opts.maxDepth
+  const ignoreInstances = opts.ignoreInstances || true
+  const includeEmptyObjects = opts.includeEmptyObjects || false
   const transformKey = opts.transformKey || keyIdentity
   const output = {}
 
@@ -23,6 +25,7 @@ function flatten (target, opts) {
       const isarray = opts.safe && Array.isArray(value)
       const type = Object.prototype.toString.call(value)
       const isbuffer = isBuffer(value)
+      const isintance = ignoreInstances && value && value.constructor && value.constructor.name && value.constructor.name !== 'Object'
       const isobject = (
         type === '[object Object]' ||
         type === '[object Array]'
@@ -32,9 +35,13 @@ function flatten (target, opts) {
         ? prev + delimiter + transformKey(key)
         : transformKey(key)
 
-      if (!isarray && !isbuffer && isobject && Object.keys(value).length &&
+      if (!isarray && !isbuffer && !isintance && isobject && Object.keys(value).length &&
         (!opts.maxDepth || currentDepth < maxDepth)) {
         return step(value, newKey, currentDepth + 1)
+      }
+
+      if (includeEmptyObjects || isobject && Object.keys(value).length === 0) {
+        return
       }
 
       output[newKey] = value
